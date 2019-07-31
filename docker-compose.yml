@@ -1,0 +1,74 @@
+version: '3.5'
+
+services:
+  node:
+    image: "node:10"
+    user: "node"
+    working_dir: /home/node/app
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./:/home/node/app
+    expose:
+      - "8081"
+    command: "npm start" 
+  mongo:
+    container_name: mongo
+    image: mongo
+    volumes:
+      - ./data:/data/db
+    ports:
+      - "27017:27017"
+  mysql:
+    container_name: mysql
+    image: mysql:5.5.60
+    restart: always
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/conf/mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=adminadmin
+  redis:
+    image: 'redis:3.2.11'
+    restart: always
+    hostname: redis
+    container_name: redis
+    ports:
+      - '6379:6379'
+    command: redis-server --requirepass adminadmin
+  rabbitmq:
+    container_name: rabbitmq
+    networks:
+      - local
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    image: rabbitmq:3.7
+    environment:
+      - "RABBITMQ_DEFAULT_PASS=pass"
+      - "RABBITMQ_DEFAULT_USER=user"
+      - "RABBITMQ_DEFAULT_VHOST='vhost'"
+  kafka:
+    image: wurstmeister/kafka
+    environment:
+      KAFKA_TOPICS: 'top1,top2,top3'
+    ports:
+    - "2181:2181"
+    - "9092:9092"
+    volumes:
+    - "kafka-data:/home/appuser"
+    - "kafka-data:/var"
+    - "kafka-data:/tmp"
+    networks: [backing-services]
+
+volumes:
+  kafka-data: {}
+
+networks:
+  backing-services:
+    driver: bridge
+  local:
+    external: false
+    name: local
